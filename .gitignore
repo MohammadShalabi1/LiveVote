@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.env
+.vite/
+.DS_Store
+.vscode/
+*.log
+coverage/
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
