@@ -1,10 +1,95 @@
+import { useFieldArray, useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+const schema = z.object({
+  question: z.string().min(1, "Question is required"),
+  options: z
+    .array(
+      z.object({
+        text: z.string().min(1, "Option is required"),
+      })
+    )
+    .min(2, "At least 2 options are required"),
+});
+
+type FormData = z.infer<typeof schema>;
+
 export default function CreatePollPage() {
+  const {
+    register,
+    handleSubmit,
+    control,
+    formState: { errors },
+  } = useForm<FormData>({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      question: "",
+      options: [{ text: "" }, { text: "" }],
+    },
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "options",
+  });
+
+  function onSubmit(data: FormData) {
+    console.log(data);
+  }
+
   return (
-    <main className="min-h-screen bg-slate-950 p-6 text-slate-100">
-      <div className="mx-auto max-w-3xl rounded-2xl border border-slate-800 bg-slate-900/80 p-8 shadow-2xl">
-        <h1 className="text-3xl font-semibold">Create a LiveVote poll</h1>
-        <p className="mt-2 text-slate-400">This page will host your poll creation form.</p>
-      </div>
-    </main>
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <label>Question</label>
+      <br />
+      <input
+        type="text"
+        placeholder="Enter your question"
+        {...register("question")}
+      />
+      <p>{errors.question?.message}</p>
+
+      <br />
+
+      {fields.map((field, index) => (
+        <div key={field.id}>
+          <label>Option {index + 1}</label>
+          <br />
+
+          <input
+            type="text"
+            placeholder={`Option ${index + 1}`}
+            {...register(`options.${index}.text`)}
+          />
+
+          <p>{errors.options?.[index]?.text?.message}</p>
+
+          <button
+            type="button"
+            disabled={fields.length <= 2}
+            onClick={() => remove(index)}
+          >
+            Remove
+          </button>
+
+          <br />
+          <br />
+        </div>
+      ))}
+
+      <p>{errors.options?.message}</p>
+
+      <button
+        type="button"
+        onClick={() => append({ text: "" })}
+      >
+        Add Option
+      </button>
+
+      <br />
+      <br />
+
+      <button type="submit">Create Poll</button>
+    </form>
   );
 }
