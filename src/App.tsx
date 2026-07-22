@@ -1,16 +1,25 @@
-import { Routes, Route } from 'react-router-dom';
-import CreatePollPage from './pages/CreatePollPage';
-import PollCreatedPage from './pages/PollCreatedPage';
-import VotePage from './pages/VotePage';
-import DashboardPage from './pages/DashboardPage';
+import { useEffect } from "react";
+import { supabase } from "./lib/supabaseClient";
+import {createBrowserRouter, RouterProvider} from "react-router-dom";
+import CreatePollPage from "./pages/CreatePollPage";
+import VotePage from "./pages/VotePage";
+const router = createBrowserRouter([
+    {
+      path: "/",element: <CreatePollPage />
+    },
+    {
+      path: "/poll/:id",
+      element: <VotePage />
+    }
+  ]);
+function App() {
+  
 
-export default function App() {
-  return (
-    <Routes>
-      <Route path="/" element={<CreatePollPage />} />
-      <Route path="/created" element={<PollCreatedPage />} />
-      <Route path="/poll/:id" element={<VotePage />} />
-      <Route path="/dashboard" element={<DashboardPage />} />
-    </Routes>
+  return(
+    <RouterProvider router={router} />
   );
+
+  
 }
+
+export default App;
