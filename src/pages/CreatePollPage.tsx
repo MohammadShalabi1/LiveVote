@@ -46,7 +46,7 @@ export default function CreatePollPage() {
         data,creatorToken
     },{
         onSuccess:(poll)=>{
-            navigate(`/poll/${poll.id}`)
+            navigate(`/poll-created/${poll.id}`)
         }
     })
   }
