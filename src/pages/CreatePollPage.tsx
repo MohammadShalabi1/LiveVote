@@ -1,6 +1,9 @@
 import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useCreatePoll } from "../hooks/useCreatePoll";
+import { useCreatorToken } from "../hooks/useCreatorToken";
+import { useNavigate } from "react-router-dom";
 
 const schema = z.object({
   question: z.string().min(1, "Question is required"),
@@ -29,13 +32,23 @@ export default function CreatePollPage() {
     },
   });
 
+  const navigate = useNavigate();
+  const creatorToken = useCreatorToken();
+  const createPollMutation = useCreatePoll();
+
   const { fields, append, remove } = useFieldArray({
     control,
     name: "options",
   });
 
   function onSubmit(data: FormData) {
-    console.log(data);
+    createPollMutation.mutate({
+        data,creatorToken
+    },{
+        onSuccess:(poll)=>{
+            navigate(`/poll/${poll.id}`)
+        }
+    })
   }
 
   return (
