@@ -4,6 +4,8 @@ import {createBrowserRouter, RouterProvider} from "react-router-dom";
 import CreatePollPage from "./pages/CreatePollPage";
 import VotePage from "./pages/VotePage";
 import PollCreatedPage from "./pages/PollCreatedPage";
+import ResultsPage from "./pages/ResultPage";
+
 const router = createBrowserRouter([
     {
       path: "/",element: <CreatePollPage />
@@ -17,6 +19,9 @@ const router = createBrowserRouter([
     },{
       path:"/vote/:id",
       element:<VotePage />
+    },{
+      path:"/results/:id",
+      element:<ResultsPage />
     }
   ]);
 function App() {
