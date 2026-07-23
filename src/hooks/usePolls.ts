@@ -10,13 +10,16 @@ export function usePolls() {
       const { data, error } = await supabase
         .from("polls")
         .select(`
-          id,
-          question,
-          options (
             id,
-            label
-          )
-        `).eq("creator_token", token);
+            question,
+            options (
+                id,
+                label
+            ),
+            votes (
+                id
+            )
+            `).eq("creator_token", token);
 
       if (error) {
         throw error;
