@@ -7,6 +7,15 @@ type VoteData ={
     voterToken: string;
 }
 async function vote({pollId,optionId,voterToken}:VoteData){
+    const { data: poll } = await supabase
+        .from("polls")
+        .select("is_closed")
+        .eq("id", pollId)
+        .single();
+
+        if (poll?.is_closed) {
+        throw new Error("Poll is closed");
+        }
         const {data,error} = await supabase.from("votes").insert({
             poll_id: pollId,
             option_id: optionId,

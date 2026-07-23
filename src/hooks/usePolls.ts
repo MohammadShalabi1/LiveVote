@@ -18,7 +18,7 @@ export function usePolls() {
             ),
             votes (
                 id
-            )
+            ),is_closed
             `).eq("creator_token", token);
 
       if (error) {

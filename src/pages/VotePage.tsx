@@ -6,7 +6,8 @@ import { useVote } from "../hooks/useVote";
 import { useState } from "react";
 
 export default function VotePage() {
-  const [message,setMessage] = useState("");
+  const [message, setMessage] = useState("");
+
   const { id } = useParams();
 
   const { data: poll, isLoading, error } = usePoll(id!);
@@ -36,50 +37,72 @@ export default function VotePage() {
     return <p>Checking your vote...</p>;
   }
 
+  // Block voting if poll is closed
+  if (poll.is_closed) {
+    return (
+      <div>
+        <h1>{poll.question}</h1>
+
+        <p>
+          This poll is closed. Voting is no longer available.
+        </p>
+      </div>
+    );
+  }
+
+  // Block voting if user already voted
   if (hasVoted) {
     return (
       <div>
         <h1>{poll.question}</h1>
-        <p>You already voted.</p>
+
+        <p>
+          You already voted.
+        </p>
       </div>
     );
   }
 
   return (
-  <div>
-    <h1>{poll.question}</h1>
+    <div>
+      <h1>{poll.question}</h1>
 
-    {message && <p>{message}</p>}
+      {message && <p>{message}</p>}
 
-    {poll.options.map((option: any) => (
-      <div key={option.id}>
-        <button
-          onClick={() =>
-            vote.mutate(
-              {
-                pollId: id!,
-                optionId: option.id,
-                voterToken,
-              },
-              {
-                onSuccess: () => {
-                  setMessage("Vote submitted successfully!");
+      {poll.options.map((option: any) => (
+        <div key={option.id}>
+          <button
+            onClick={() =>
+              vote.mutate(
+                {
+                  pollId: id!,
+                  optionId: option.id,
+                  voterToken,
                 },
-                onError: (error: any) => {
-                  if (error.code === "23505") {
-                    setMessage("You already voted.");
-                  } else {
-                    setMessage("Something went wrong.");
-                  }
-                },
-              }
-            )
-          }
-        >
-          {option.label}
-        </button>
-      </div>
-    ))}
-  </div>
-);
+                {
+                  onSuccess: () => {
+                    setMessage("Vote submitted successfully!");
+                  },
+
+                  onError: (error: any) => {
+                    if (error.code === "23505") {
+                      setMessage("You already voted.");
+                    } 
+                    else if (error.message === "Poll is closed") {
+                      setMessage("This poll is closed.");
+                    } 
+                    else {
+                      setMessage("Something went wrong.");
+                    }
+                  },
+                }
+              )
+            }
+          >
+            {option.label}
+          </button>
+        </div>
+      ))}
+    </div>
+  );
 }

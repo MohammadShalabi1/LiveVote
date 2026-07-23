@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { useClosePoll } from "../hooks/useClosePoll";
 
 type PollCardProps = {
   poll:{
@@ -11,11 +12,13 @@ type PollCardProps = {
     votes:{
       id:string;
     }[];
+    is_closed:boolean;
   };
 };
 
 export default function PollCard({ poll }: PollCardProps) {
   const navigate = useNavigate();
+  const closePoll = useClosePoll();
 
   return (
     <div
@@ -29,9 +32,22 @@ export default function PollCard({ poll }: PollCardProps) {
       <p>
         {poll.options.length} options
       </p>
+
       <p>
         {poll.votes.length} voters
       </p>
+
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+
+          closePoll.mutate(poll.id);
+        }}
+        className="mt-3 rounded bg-red-500 px-3 py-1 text-white"
+      >
+        Close Poll
+      </button>
+
     </div>
   );
 }
