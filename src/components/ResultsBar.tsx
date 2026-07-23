@@ -10,20 +10,19 @@ export default function ResultsBar({
   percentage,
 }: ResultsBarProps) {
   return (
-    <div className="mb-6">
-      {/* Option name and vote count */}
-      <div className="mb-2 flex items-center justify-between">
-        <h3 className="font-medium text-gray-800">{text}</h3>
+    <div className="mb-6 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/40">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h3 className="text-base font-semibold text-slate-900">{text}</h3>
 
-        <span className="text-sm text-gray-600">
-          {count} vote{count !== 1 ? "s" : ""} ({percentage.toFixed(1)}%)
+        <span className="text-sm text-slate-600">
+          {count} vote{count !== 1 ? "s" : ""} • {percentage.toFixed(1)}%
         </span>
       </div>
 
       {/* Progress bar */}
-      <div className="h-4 w-full overflow-hidden rounded-full bg-gray-200">
+      <div className="h-3 w-full overflow-hidden rounded-full bg-slate-100">
         <div
-          className="h-full rounded-full bg-blue-600 transition-all duration-500 ease-in-out"
+          className="h-full rounded-full bg-indigo-600 transition-all duration-500 ease-in-out"
           style={{
             width: `${percentage}%`,
           }}
