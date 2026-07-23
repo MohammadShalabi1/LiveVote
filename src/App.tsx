@@ -5,6 +5,10 @@ import CreatePollPage from "./pages/CreatePollPage";
 import VotePage from "./pages/VotePage";
 import PollCreatedPage from "./pages/PollCreatedPage";
 import ResultsPage from "./pages/ResultPage";
+import {lazy,Suspense } from "react";
+
+
+const DashboardPage = lazy(()=>import("./pages/DashboardPage"));
 
 const router = createBrowserRouter([
     {
@@ -22,13 +26,19 @@ const router = createBrowserRouter([
     },{
       path:"/results/:id",
       element:<ResultsPage />
+    },{
+      path:"/dashboard",
+      element:<DashboardPage />
     }
+
   ]);
 function App() {
   
 
   return(
-    <RouterProvider router={router} />
+    <Suspense fallback={<div>Loading...</div>}>
+      <RouterProvider router={router} />
+    </Suspense>
   );
 
   
