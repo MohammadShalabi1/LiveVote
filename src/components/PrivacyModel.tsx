@@ -6,9 +6,9 @@ export default function PrivacyModal({
   onAccept,
 }: PrivacyModalProps) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-2xl rounded-lg bg-white p-8 shadow-xl">
-        <h1 className="mb-4 text-2xl font-bold">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6 sm:px-0">
+      <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl bg-white p-6 shadow-xl sm:p-8">
+        <h1 className="mb-4 text-2xl font-bold text-slate-900">
           Welcome to LiveVote
         </h1>
 
