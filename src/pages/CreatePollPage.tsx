@@ -52,57 +52,79 @@ export default function CreatePollPage() {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
-      <label>Question</label>
-      <br />
-      <input
-        type="text"
-        placeholder="Enter your question"
-        {...register("question")}
-      />
-      <p>{errors.question?.message}</p>
-
-      <br />
-
-      {fields.map((field, index) => (
-        <div key={field.id}>
-          <label>Option {index + 1}</label>
-          <br />
-
-          <input
-            type="text"
-            placeholder={`Option ${index + 1}`}
-            {...register(`options.${index}.text`)}
-          />
-
-          <p>{errors.options?.[index]?.text?.message}</p>
-
-          <button
-            type="button"
-            disabled={fields.length <= 2}
-            onClick={() => remove(index)}
-          >
-            Remove
-          </button>
-
-          <br />
-          <br />
+    <div className="mx-auto min-h-[calc(100vh-3rem)] px-4 py-12 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-3xl rounded-3xl border border-slate-200 bg-white p-8 shadow-sm shadow-slate-200/40 sm:p-10">
+        <div className="mb-8 text-center">
+          <p className="text-sm uppercase tracking-[0.28em] text-indigo-600/80">Create a new poll</p>
+          <h1 className="mt-3 text-3xl font-semibold text-slate-900 sm:text-4xl">Build your voting poll</h1>
+          <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-slate-600 sm:text-base">
+            Add a question, define options, and share your poll instantly with your audience.
+          </p>
         </div>
-      ))}
 
-      <p>{errors.options?.message}</p>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-slate-700">Question</label>
+            <input
+              type="text"
+              placeholder="Enter your question"
+              {...register("question")}
+              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
+            />
+            {errors.question?.message && (
+              <p className="text-sm text-rose-600">{errors.question.message}</p>
+            )}
+          </div>
 
-      <button
-        type="button"
-        onClick={() => append({ text: "" })}
-      >
-        Add Option
-      </button>
+          <div className="space-y-6">
+            {fields.map((field, index) => (
+              <div key={field.id} className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                <div className="flex items-center justify-between gap-4">
+                  <label className="text-sm font-semibold text-slate-700">Option {index + 1}</label>
+                  <button
+                    type="button"
+                    disabled={fields.length <= 2}
+                    onClick={() => remove(index)}
+                    className="rounded-full border border-slate-200 bg-white px-3 py-1 text-sm font-semibold text-slate-600 transition hover:border-rose-300 hover:text-rose-700 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    Remove
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  placeholder={`Option ${index + 1}`}
+                  {...register(`options.${index}.text`)}
+                  className="mt-4 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
+                />
+                {errors.options?.[index]?.text?.message && (
+                  <p className="mt-2 text-sm text-rose-600">{errors.options[index]?.text?.message}</p>
+                )}
+              </div>
+            ))}
+          </div>
 
-      <br />
-      <br />
+          {errors.options?.message && (
+            <p className="text-sm text-rose-600">{errors.options.message}</p>
+          )}
 
-      <button type="submit">Create Poll</button>
-    </form>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <button
+              type="button"
+              onClick={() => append({ text: "" })}
+              className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-slate-100 px-6 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-200"
+            >
+              Add Option
+            </button>
+
+            <button
+              type="submit"
+              className="inline-flex items-center justify-center rounded-2xl bg-indigo-600 px-8 py-3 text-sm font-semibold text-white transition hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+            >
+              Create Poll
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }
