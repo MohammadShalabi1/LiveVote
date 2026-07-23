@@ -16,6 +16,7 @@ export default function ResultPage() {
   // Local state for realtime updates
   const [liveVotes, setLiveVotes] = useState<any[]>([]);
 
+  const [m, setM] = useState("");
   // Initialize liveVotes when the query finishes
   useEffect(() => {
     if (votes) {
