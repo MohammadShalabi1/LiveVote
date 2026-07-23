@@ -1,20 +1,33 @@
-interface ResultsBarProps {
-  label: string;
-  value: number;
-  max: number;
-}
+type ResultsBarProps = {
+  text: string;
+  count: number;
+  percentage: number;
+};
 
-export default function ResultsBar({ label, value, max }: ResultsBarProps) {
-  const width = max > 0 ? Math.round((value / max) * 100) : 0;
-
+export default function ResultsBar({
+  text,
+  count,
+  percentage,
+}: ResultsBarProps) {
   return (
-    <div className="w-full">
-      <div className="mb-1 flex items-center justify-between text-sm text-slate-300">
-        <span>{label}</span>
-        <span>{value}</span>
+    <div className="mb-6">
+      {/* Option name and vote count */}
+      <div className="mb-2 flex items-center justify-between">
+        <h3 className="font-medium text-gray-800">{text}</h3>
+
+        <span className="text-sm text-gray-600">
+          {count} vote{count !== 1 ? "s" : ""} ({percentage.toFixed(1)}%)
+        </span>
       </div>
-      <div className="h-3 overflow-hidden rounded-full bg-slate-800">
-        <div className="h-full rounded-full bg-cyan-500 transition-all duration-300" style={{ width: `${width}%` }} />
+
+      {/* Progress bar */}
+      <div className="h-4 w-full overflow-hidden rounded-full bg-gray-200">
+        <div
+          className="h-full rounded-full bg-blue-600 transition-all duration-500 ease-in-out"
+          style={{
+            width: `${percentage}%`,
+          }}
+        />
       </div>
     </div>
   );
