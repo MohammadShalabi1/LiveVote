@@ -65,6 +65,12 @@ export default function PollCard({ poll }: PollCardProps) {
           >
             Delete Poll
           </button>
+          <button
+            onClick={(e) => {e.stopPropagation();navigate(`/poll-created/${poll.id}`);}}
+            className="inline-flex items-center justify-center rounded-2xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-600 transition hover:border-rose-300 hover:bg-rose-100 focus:outline-none focus:ring-2 focus:ring-rose-200"
+          >
+            See your poll Qr code and link
+          </button>
         </div>
       </div>
 
