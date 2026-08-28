@@ -5,16 +5,43 @@ import { useCreatePoll } from "../hooks/useCreatePoll";
 import { useCreatorToken } from "../hooks/useCreatorToken";
 import { useNavigate } from "react-router-dom";
 
-const schema = z.object({
-  question: z.string().min(1, "Question is required"),
-  options: z
-    .array(
-      z.object({
-        text: z.string().min(1, "Option is required"),
-      })
-    )
-    .min(2, "At least 2 options are required"),
-});
+const schema = z
+  .object({
+    question: z
+      .string()
+      .trim()
+      .min(3, "Question must be at least 3 characters")
+      .max(120, "Question must be 120 characters or less"),
+    options: z
+      .array(
+        z.object({
+          text: z
+            .string()
+            .trim()
+            .min(1, "Option is required")
+            .max(80, "Option must be 80 characters or less"),
+        })
+      )
+      .min(2, "At least 2 options are required")
+      .max(10, "You can add up to 10 options"),
+  })
+  .superRefine((data, context) => {
+    const seenOptions = new Set<string>();
+
+    data.options.forEach((option, index) => {
+      const normalizedOption = option.text.trim().toLowerCase();
+
+      if (seenOptions.has(normalizedOption)) {
+        context.addIssue({
+          code: "custom",
+          message: "Options must be unique",
+          path: ["options", index, "text"],
+        });
+      }
+
+      seenOptions.add(normalizedOption);
+    });
+  });
 
 type FormData = z.infer<typeof schema>;
 
@@ -111,6 +138,7 @@ export default function CreatePollPage() {
             <button
               type="button"
               onClick={() => append({ text: "" })}
+              disabled={fields.length >= 10}
               className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-slate-100 px-6 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-200"
             >
               Add Option

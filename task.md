@@ -251,25 +251,34 @@ Use Zod for good UX and database constraints for real integrity.
 
 ### Frontend Validation
 
-- [ ] Poll title: trim whitespace, minimum 3 chars, maximum 120 chars.
-- [ ] Option text: trim whitespace, minimum 1 char, maximum 80 chars.
-- [ ] Require at least 2 options.
-- [ ] Set a reasonable maximum, for example 10 options.
-- [ ] Reject duplicate options after trimming and lowercasing.
-- [ ] Prevent empty-space-only values.
-- [ ] Show errors next to the field, not only in the console.
+- [x] Poll title: trim whitespace, minimum 3 chars, maximum 120 chars.
+- [x] Option text: trim whitespace, minimum 1 char, maximum 80 chars.
+- [x] Require at least 2 options.
+- [x] Set a reasonable maximum, for example 10 options.
+- [x] Reject duplicate options after trimming and lowercasing.
+- [x] Prevent empty-space-only values.
+- [x] Show errors next to the field, not only in the console.
 
 ### Database Validation
 
-- [ ] Add matching maximum lengths/check constraints where practical.
-- [ ] Add foreign keys with intentional delete behavior.
-- [ ] Add `NOT NULL` where values are actually required.
-- [ ] Add created timestamps if missing.
+- [x] Add matching maximum lengths/check constraints where practical.
+- [x] Add foreign keys with intentional delete behavior.
+- [x] Add `NOT NULL` where values are actually required.
+- [x] Add created timestamps if missing.
+
+### Implementation Notes
+
+- Added `supabase/migrations/202608280004_validate_poll_vote_data.sql`.
+- The migration adds `created_at` columns when missing, required-column rules, length checks, and cascade-delete foreign keys.
+- The `create_poll` RPC now enforces question length, option length, 2-10 options, blank rejection, and duplicate option rejection.
+- `src/pages/CreatePollPage.tsx` now uses matching Zod validation and shows field-level messages.
+- `src/hooks/useCreatePoll.ts` trims values before using the temporary direct-insert fallback.
+- Existing invalid database rows may need cleanup before applying this migration.
 
 ### XSS Check
 
-- [ ] Keep React's normal escaped text rendering.
-- [ ] Do not render poll titles/options with `dangerouslySetInnerHTML`.
+- [x] Keep React's normal escaped text rendering.
+- [x] Do not render poll titles/options with `dangerouslySetInnerHTML`.
 
 ### Done When
 

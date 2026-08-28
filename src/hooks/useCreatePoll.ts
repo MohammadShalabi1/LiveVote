@@ -51,7 +51,7 @@ async function createPollWithDirectInserts({
   const { data: poll, error: pollError } = await supabase
     .from("polls")
     .insert({
-      question: data.question,
+      question: data.question.trim(),
       creator_token: creatorToken,
     })
     .select()
@@ -63,7 +63,7 @@ async function createPollWithDirectInserts({
 
   const options = data.options.map((option, index) => ({
     poll_id: poll.id,
-    label: option.text,
+    label: option.text.trim(),
     position: index,
   }));
 
