@@ -1,27 +1,38 @@
-﻿import { useParams } from "react-router-dom";
-import { useVoteResult } from "../hooks/useVoteResult";
-import { usePoll } from "../hooks/usePoll";
-import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabaseClient";
+import { useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { useParams } from "react-router-dom";
 import ResultsBar from "../components/ResultsBar";
-import { useDataChart } from "../hooks/useDataChart";
 import { ResultsChart } from "../components/ResultsChart";
+import { useCreatorToken } from "../hooks/useCreatorToken";
+import { useDataChart } from "../hooks/useDataChart";
+import { usePoll } from "../hooks/usePoll";
+import { isResultsHiddenError, useVoteResult } from "../hooks/useVoteResult";
+import { useVoterToken } from "../hooks/useVoterToken";
+import {
+  getHiddenResultsMessage,
+  normalizeResultsVisibility,
+} from "../lib/resultVisibility";
+import { supabase } from "../lib/supabaseClient";
 
 export default function ResultPage() {
   const { id } = useParams();
+  const voterId = useVoterToken();
+  const creatorToken = useCreatorToken();
+  const queryClient = useQueryClient();
 
-  const { data: votes, isLoading, error } = useVoteResult(id!);
-  const { data: poll } = usePoll(id!);
-
-  const [liveVotes, setLiveVotes] = useState<any[]>([]);
+  const { data: votes, isLoading, error } = useVoteResult(
+    id!,
+    voterId,
+    creatorToken
+  );
+  const { data: poll, isLoading: pollLoading } = usePoll(id!);
+  const resultsHidden = isResultsHiddenError(error);
 
   useEffect(() => {
-    if (votes) {
-      setLiveVotes(votes);
+    if (!id || !votes || resultsHidden) {
+      return;
     }
-  }, [votes]);
 
-  useEffect(() => {
     const channel = supabase
       .channel(`votes-${id}`)
       .on(
@@ -32,11 +43,10 @@ export default function ResultPage() {
           table: "votes",
           filter: `poll_id=eq.${id}`,
         },
-        (payload) => {
-          setLiveVotes((previous) => [
-            ...previous,
-            payload.new as any,
-          ]);
+        () => {
+          queryClient.invalidateQueries({
+            queryKey: ["voteResult", id, voterId, creatorToken],
+          });
         }
       )
       .subscribe();
@@ -44,28 +54,20 @@ export default function ResultPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [id]);
+  }, [creatorToken, id, queryClient, resultsHidden, voterId, votes]);
 
-  const { results } = useDataChart(poll, liveVotes);
-  const totalVotes = results.reduce((sum: number, item: any) => sum + item.count, 0);
+  const { results } = useDataChart(poll, votes);
+  const totalVotes = results.reduce(
+    (sum: number, item: any) => sum + item.count,
+    0
+  );
 
-  if (isLoading) {
+  if (isLoading || pollLoading) {
     return (
       <div className="mx-auto flex min-h-[calc(100vh-3rem)] items-center justify-center px-4 py-10">
         <div className="w-full max-w-3xl rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm shadow-slate-200/40">
           <div className="mx-auto mb-6 h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-indigo-500" />
           <p className="text-sm text-slate-600">Loading poll results...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="mx-auto flex min-h-[calc(100vh-3rem)] items-center justify-center px-4 py-10">
-        <div className="w-full max-w-3xl rounded-3xl border border-rose-200 bg-white p-8 text-center shadow-sm shadow-rose-200/40">
-          <h1 className="text-2xl font-semibold text-slate-900">Unable to load results</h1>
-          <p className="mt-3 text-sm text-slate-600">There was a problem fetching votes. Please refresh or try again later.</p>
         </div>
       </div>
     );
@@ -77,6 +79,32 @@ export default function ResultPage() {
         <div className="w-full max-w-3xl rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm shadow-slate-200/40">
           <h1 className="text-2xl font-semibold text-slate-900">Poll not found</h1>
           <p className="mt-3 text-sm text-slate-600">The poll you are looking for does not exist or has been removed.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (resultsHidden) {
+    return (
+      <div className="mx-auto flex min-h-[calc(100vh-3rem)] items-center justify-center px-4 py-10">
+        <div className="w-full max-w-3xl rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm shadow-slate-200/40">
+          <h1 className="text-2xl font-semibold text-slate-900">Results are hidden</h1>
+          <p className="mt-3 text-sm text-slate-600">
+            {getHiddenResultsMessage(
+              normalizeResultsVisibility(poll.results_visibility)
+            )}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="mx-auto flex min-h-[calc(100vh-3rem)] items-center justify-center px-4 py-10">
+        <div className="w-full max-w-3xl rounded-3xl border border-rose-200 bg-white p-8 text-center shadow-sm shadow-rose-200/40">
+          <h1 className="text-2xl font-semibold text-slate-900">Unable to load results</h1>
+          <p className="mt-3 text-sm text-slate-600">There was a problem fetching votes. Please refresh or try again later.</p>
         </div>
       </div>
     );

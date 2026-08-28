@@ -12,9 +12,7 @@ type PollCardProps = {
       id:string;
       label:string;
     }[];
-    votes:{
-      id:string;
-    }[];
+    vote_count: number;
     is_closed:boolean;
     expires_at?: string | null;
   };
@@ -36,7 +34,7 @@ export default function PollCard({ poll }: PollCardProps) {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="text-lg font-semibold text-slate-900 sm:text-xl">{poll.question}</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-500">{poll.options.length} options · {poll.votes.length} voters</p>
+          <p className="mt-2 text-sm leading-6 text-slate-500">{poll.options.length} options · {poll.vote_count} voters</p>
         </div>
         <span className={`inline-flex rounded-2xl px-3 py-1 text-xs font-semibold ${status === "open" ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-600"}`}>
           {getPollStatusLabel(status)}

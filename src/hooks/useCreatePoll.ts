@@ -1,9 +1,14 @@
 import { useMutation } from "@tanstack/react-query";
 import { supabase } from "../lib/supabaseClient";
+import {
+  DEFAULT_RESULTS_VISIBILITY,
+  ResultsVisibility,
+} from "../lib/resultVisibility";
 
 type CreatePollData = {
   question: string;
   expiresAt?: string;
+  resultsVisibility?: ResultsVisibility;
   options: {
     text: string;
   }[];
@@ -17,11 +22,15 @@ async function createPoll({
   creatorToken: string;
 }) {
   const expiresAt = toExpirationValue(data.expiresAt);
+  const resultsVisibility =
+    data.resultsVisibility ?? DEFAULT_RESULTS_VISIBILITY;
+
   const { data: pollId, error } = await supabase.rpc("create_poll", {
     p_question: data.question,
     p_options: data.options,
     p_creator_token: creatorToken,
     p_expires_at: expiresAt,
+    p_results_visibility: resultsVisibility,
   });
 
   if (error) {
@@ -29,24 +38,24 @@ async function createPoll({
       throw error;
     }
 
+    const expirationPoll = await createPollWithExpirationRpc({
+      data,
+      creatorToken,
+      expiresAt,
+    });
+
+    if (expirationPoll) {
+      return expirationPoll;
+    }
+
     if (!expiresAt) {
-      const { data: legacyPollId, error: legacyError } = await supabase.rpc(
-        "create_poll",
-        {
-          p_question: data.question,
-          p_options: data.options,
-          p_creator_token: creatorToken,
-        }
-      );
+      const legacyPoll = await createPollWithLegacyRpc({
+        data,
+        creatorToken,
+      });
 
-      if (!legacyError) {
-        return {
-          id: legacyPollId,
-        };
-      }
-
-      if (!isMissingCreatePollRpc(legacyError)) {
-        throw legacyError;
+      if (legacyPoll) {
+        return legacyPoll;
       }
     }
 
@@ -63,6 +72,61 @@ function isMissingCreatePollRpc(error: { code?: string; message?: string }) {
     error.code === "PGRST202" ||
     error.message?.toLowerCase().includes("create_poll") === true
   );
+}
+
+async function createPollWithExpirationRpc({
+  data,
+  creatorToken,
+  expiresAt,
+}: {
+  data: CreatePollData;
+  creatorToken: string;
+  expiresAt: string | null;
+}) {
+  const { data: pollId, error } = await supabase.rpc("create_poll", {
+    p_question: data.question,
+    p_options: data.options,
+    p_creator_token: creatorToken,
+    p_expires_at: expiresAt,
+  });
+
+  if (!error) {
+    return {
+      id: pollId,
+    };
+  }
+
+  if (!isMissingCreatePollRpc(error)) {
+    throw error;
+  }
+
+  return null;
+}
+
+async function createPollWithLegacyRpc({
+  data,
+  creatorToken,
+}: {
+  data: CreatePollData;
+  creatorToken: string;
+}) {
+  const { data: pollId, error } = await supabase.rpc("create_poll", {
+    p_question: data.question,
+    p_options: data.options,
+    p_creator_token: creatorToken,
+  });
+
+  if (!error) {
+    return {
+      id: pollId,
+    };
+  }
+
+  if (!isMissingCreatePollRpc(error)) {
+    throw error;
+  }
+
+  return null;
 }
 
 function toExpirationValue(expiresAt?: string) {
@@ -84,26 +148,48 @@ async function createPollWithDirectInserts({
     question: data.question.trim(),
     creator_token: creatorToken,
     expires_at: toExpirationValue(data.expiresAt),
+    results_visibility: data.resultsVisibility ?? DEFAULT_RESULTS_VISIBILITY,
   };
 
-  let { data: poll, error: pollError } = await supabase
-    .from("polls")
-    .insert(pollValues)
-    .select()
-    .single();
+  const pollPayloads: Record<string, string | null>[] = [
+    pollValues,
+    {
+      question: pollValues.question,
+      creator_token: pollValues.creator_token,
+      results_visibility: pollValues.results_visibility,
+    },
+    {
+      question: pollValues.question,
+      creator_token: pollValues.creator_token,
+      expires_at: pollValues.expires_at,
+    },
+    {
+      question: pollValues.question,
+      creator_token: pollValues.creator_token,
+    },
+  ];
 
-  if (pollError && pollError.message.includes("expires_at")) {
-    const { data: fallbackPoll, error: fallbackPollError } = await supabase
+  let poll = null;
+  let pollError = null;
+
+  for (const payload of pollPayloads) {
+    const { data: createdPoll, error: createError } = await supabase
       .from("polls")
-      .insert({
-        question: pollValues.question,
-        creator_token: pollValues.creator_token,
-      })
+      .insert(payload)
       .select()
       .single();
 
-    poll = fallbackPoll;
-    pollError = fallbackPollError;
+    if (!createError) {
+      poll = createdPoll;
+      pollError = null;
+      break;
+    }
+
+    pollError = createError;
+
+    if (!isMissingCompatibilityColumn(createError)) {
+      break;
+    }
   }
 
   if (pollError) {
@@ -125,6 +211,16 @@ async function createPollWithDirectInserts({
   }
 
   return poll;
+}
+
+function isMissingCompatibilityColumn(error: { code?: string; message?: string }) {
+  const message = error.message?.toLowerCase() ?? "";
+
+  return (
+    error.code === "42703" ||
+    message.includes("expires_at") ||
+    message.includes("results_visibility")
+  );
 }
 
 

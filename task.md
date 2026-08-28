@@ -356,12 +356,22 @@ results_visibility: always | after_vote | after_close
 
 ### Steps
 
-- [ ] Add `results_visibility` to the poll data with a safe default such as `always`.
-- [ ] Add a simple select/radio group to the poll creation form.
-- [ ] Validate the value with Zod.
-- [ ] Show a friendly message when results are intentionally hidden, for example `Results will be available after you vote.`
-- [ ] Do not rely only on hiding a chart with CSS. Make sure the query/API/RPC does not expose data that should still be hidden if the current architecture supports enforcing this at the data boundary.
-- [ ] Keep the logic in one helper such as `canViewResults(...)` instead of repeating conditions in several components.
+- [x] Add `results_visibility` to the poll data with a safe default such as `always`.
+- [x] Add a simple select/radio group to the poll creation form.
+- [x] Validate the value with Zod.
+- [x] Show a friendly message when results are intentionally hidden, for example `Results will be available after you vote.`
+- [x] Do not rely only on hiding a chart with CSS. Make sure the query/API/RPC does not expose data that should still be hidden if the current architecture supports enforcing this at the data boundary.
+- [x] Keep the logic in one helper such as `canViewResults(...)` instead of repeating conditions in several components.
+
+### Implementation Notes
+
+- Added `supabase/migrations/202608280006_add_result_visibility.sql`.
+- The migration adds `polls.results_visibility` with allowed values `always`, `after_vote`, and `after_close`.
+- `create_poll` now accepts `p_results_visibility`, validates it, and saves it with a default of `always`.
+- Direct anonymous reads from `votes` are revoked, and result reads now go through `get_poll_results`.
+- `has_voted` replaces the frontend's direct vote-row lookup.
+- `get_poll_results` returns aggregate option counts only when visibility rules allow it, with creator override through the existing browser `creator_token`.
+- Vote and result pages now show friendly hidden-result messages and only subscribe to realtime updates when results are visible.
 
 ### Done When
 
@@ -378,11 +388,18 @@ results_visibility: always | after_vote | after_close
 
 ### Add/Verify Indexes
 
-- [ ] `poll_options(poll_id)`
-- [ ] `votes(poll_id)`
-- [ ] `votes(option_id)` if queried directly
-- [ ] unique index for `(poll_id, voter_id)`
-- [ ] index for `polls(created_at)` if recent polls are listed
+- [x] `poll_options(poll_id)`
+- [x] `votes(poll_id)`
+- [x] `votes(option_id)` if queried directly
+- [x] unique index for `(poll_id, voter_id)`
+- [x] index for `polls(created_at)` if recent polls are listed
+
+### Implementation Notes
+
+- Added `supabase/migrations/202608280007_add_basic_indexes.sql`.
+- The actual options table in this repo is `public.options`, so the migration adds `options_poll_id_position_idx` on `(poll_id, position)`.
+- Added indexes for `votes(poll_id)`, `votes(option_id)`, `polls(creator_token)`, and `polls(created_at)`.
+- The existing Task 2 unique constraint on `(poll_id, voter_token)` already creates the duplicate-vote supporting index.
 
 ### Done When
 

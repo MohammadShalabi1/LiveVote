@@ -1,55 +1,72 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "../lib/supabaseClient";
+import { DEFAULT_RESULTS_VISIBILITY } from "../lib/resultVisibility";
 
-const POLL_SELECT = `
-  *,
-  options (
-    id,
-    label,
-    position
-  ),
+const POLL_SELECTS = [
+  `
+  id,
+  question,
   is_closed,
-  expires_at
-`;
-
-const LEGACY_POLL_SELECT = `
-  *,
   options (
     id,
     label,
     position
   ),
-  is_closed
-`;
+  expires_at,
+  results_visibility
+`,
+  `
+  id,
+  question,
+  is_closed,
+  options (
+    id,
+    label,
+    position
+  ),
+  expires_at
+`,
+  `
+  id,
+  question,
+  is_closed,
+  options (
+    id,
+    label,
+    position
+  )
+`,
+];
 
 async function fetchPoll(id: string) {
-  let { data, error } = await supabase
-    .from("polls")
-    .select(POLL_SELECT)
-    .eq("id", id)
-    .single();
+  let lastError = null;
 
-  if (error && isMissingExpiresAtColumn(error)) {
-    const legacyResult = await supabase
+  for (const select of POLL_SELECTS) {
+    const { data, error } = await supabase
       .from("polls")
-      .select(LEGACY_POLL_SELECT)
+      .select(select)
       .eq("id", id)
       .single();
 
-    data = legacyResult.data
-      ? {
-          ...legacyResult.data,
-          expires_at: null,
-        }
-      : legacyResult.data;
-    error = legacyResult.error;
+    if (!error) {
+      const poll = data as any;
+
+      return {
+        ...poll,
+        expires_at: poll.expires_at ?? null,
+        results_visibility:
+          poll.results_visibility ?? DEFAULT_RESULTS_VISIBILITY,
+      };
+    }
+
+    if (!isMissingCompatibilityColumn(error)) {
+      throw error;
+    }
+
+    lastError = error;
   }
 
-  if (error) {
-    throw error;
-  }
-
-  return data;
+  throw lastError;
 }
 
 export function usePoll(id: string) {
@@ -60,9 +77,12 @@ export function usePoll(id: string) {
   });
 }
 
-function isMissingExpiresAtColumn(error: { code?: string; message?: string }) {
+function isMissingCompatibilityColumn(error: { code?: string; message?: string }) {
+  const message = error.message?.toLowerCase() ?? "";
+
   return (
     error.code === "42703" ||
-    error.message?.toLowerCase().includes("expires_at") === true
+    message.includes("expires_at") ||
+    message.includes("results_visibility")
   );
 }

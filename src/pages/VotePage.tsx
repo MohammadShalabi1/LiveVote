@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { usePoll } from "../hooks/usePoll";
 import { useVoterToken } from "../hooks/useVoterToken";
 import { useHasVoted } from "../hooks/useHasVoted";
@@ -6,11 +6,18 @@ import { useVote } from "../hooks/useVote";
 import { useState } from "react";
 import VotePageSkeleton from "../components/VotePageSkeleton";
 import { formatPollExpiration, getPollStatus } from "../lib/pollStatus";
+import {
+  canViewResults,
+  getHiddenResultsMessage,
+  normalizeResultsVisibility,
+} from "../lib/resultVisibility";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function VotePage() {
   const [message, setMessage] = useState("");
 
   const { id } = useParams();
+  const queryClient = useQueryClient();
 
   const { data: poll, isLoading, error } = usePoll(id!);
 
@@ -61,6 +68,11 @@ export default function VotePage() {
 
   const pollStatus = getPollStatus(poll);
   const expirationLabel = formatPollExpiration(poll.expires_at);
+  const resultsVisibility = normalizeResultsVisibility(poll.results_visibility);
+  const viewerCanSeeResults = canViewResults({
+    poll,
+    hasVoted,
+  });
 
   if (pollStatus !== "open") {
     const statusTitle = pollStatus === "closed" ? "This poll is closed." : "This poll has ended.";
@@ -75,6 +87,12 @@ export default function VotePage() {
             {expirationLabel && (
               <p className="mt-2 text-sm text-slate-600">Ended {expirationLabel}</p>
             )}
+            <Link
+              to={`/results/${id}`}
+              className="mt-5 inline-flex items-center justify-center rounded-2xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+            >
+              View results
+            </Link>
           </div>
         </div>
       </div>
@@ -88,7 +106,19 @@ export default function VotePage() {
           <h1 className="text-3xl font-semibold text-slate-900">{poll.question}</h1>
           <div className="mt-6 rounded-3xl border border-sky-200/70 bg-sky-50 p-6">
             <p className="text-lg font-medium text-sky-700">You already voted.</p>
-            <p className="mt-2 text-sm text-slate-600">Thanks for sharing your opinion. Results are being updated in real time.</p>
+            <p className="mt-2 text-sm text-slate-600">
+              {viewerCanSeeResults
+                ? "Thanks for sharing your opinion. Results are being updated in real time."
+                : getHiddenResultsMessage(resultsVisibility)}
+            </p>
+            {viewerCanSeeResults && (
+              <Link
+                to={`/results/${id}`}
+                className="mt-5 inline-flex items-center justify-center rounded-2xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+              >
+                View results
+              </Link>
+            )}
           </div>
         </div>
       </div>
@@ -104,6 +134,19 @@ export default function VotePage() {
           <p className="mt-3 text-sm leading-7 text-slate-600 sm:text-base">Pick one option below to submit your vote. Your response will be recorded instantly.</p>
           {expirationLabel && (
             <p className="mt-3 text-sm font-medium text-slate-600">Voting ends {expirationLabel}</p>
+          )}
+          {!viewerCanSeeResults && (
+            <p className="mt-3 text-sm font-medium text-slate-600">
+              {getHiddenResultsMessage(resultsVisibility)}
+            </p>
+          )}
+          {viewerCanSeeResults && (
+            <Link
+              to={`/results/${id}`}
+              className="mt-4 inline-flex items-center justify-center rounded-2xl border border-indigo-200 bg-indigo-50 px-5 py-3 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+            >
+              View current results
+            </Link>
           )}
         </div>
 
@@ -127,6 +170,12 @@ export default function VotePage() {
                   {
                     onSuccess: () => {
                       setMessage("Vote submitted successfully!");
+                      queryClient.invalidateQueries({
+                        queryKey: ["hasVoted", id, voterId],
+                      });
+                      queryClient.invalidateQueries({
+                        queryKey: ["voteResult"],
+                      });
                     },
 
                     onError: (error: any) => {

@@ -4,6 +4,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useCreatePoll } from "../hooks/useCreatePoll";
 import { useCreatorToken } from "../hooks/useCreatorToken";
 import { useNavigate } from "react-router-dom";
+import {
+  DEFAULT_RESULTS_VISIBILITY,
+  ResultsVisibility,
+} from "../lib/resultVisibility";
 
 const schema = z
   .object({
@@ -20,6 +24,7 @@ const schema = z
       .refine((value) => value === "" || new Date(value).getTime() > Date.now(), {
         message: "Expiration must be in the future",
       }),
+    resultsVisibility: z.enum(["always", "after_vote", "after_close"]),
     options: z
       .array(
         z.object({
@@ -53,6 +58,28 @@ const schema = z
 
 type FormData = z.infer<typeof schema>;
 
+const resultVisibilityOptions: {
+  value: ResultsVisibility;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: "always",
+    label: "Always",
+    description: "Voters can see results before and after voting.",
+  },
+  {
+    value: "after_vote",
+    label: "After voting",
+    description: "Voters see results after this browser submits a vote.",
+  },
+  {
+    value: "after_close",
+    label: "After poll ends",
+    description: "Voters see results after the poll is closed or expired.",
+  },
+];
+
 export default function CreatePollPage() {
   const {
     register,
@@ -64,6 +91,7 @@ export default function CreatePollPage() {
     defaultValues: {
       question: "",
       expiresAt: "",
+      resultsVisibility: DEFAULT_RESULTS_VISIBILITY,
       options: [{ text: "" }, { text: "" }],
     },
   });
@@ -123,6 +151,32 @@ export default function CreatePollPage() {
               <p className="text-sm text-rose-600">{errors.expiresAt.message}</p>
             )}
           </div>
+
+          <fieldset className="space-y-3">
+            <legend className="block text-sm font-semibold text-slate-700">Results visibility</legend>
+            <div className="grid gap-3 sm:grid-cols-3">
+              {resultVisibilityOptions.map((option) => (
+                <label
+                  key={option.value}
+                  className="flex cursor-pointer flex-col rounded-3xl border border-slate-200 bg-slate-50 p-4 transition hover:border-indigo-200 hover:bg-indigo-50"
+                >
+                  <span className="flex items-center gap-3">
+                    <input
+                      type="radio"
+                      value={option.value}
+                      {...register("resultsVisibility")}
+                      className="h-4 w-4 border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                    />
+                    <span className="text-sm font-semibold text-slate-800">{option.label}</span>
+                  </span>
+                  <span className="mt-2 text-sm leading-6 text-slate-600">{option.description}</span>
+                </label>
+              ))}
+            </div>
+            {errors.resultsVisibility?.message && (
+              <p className="text-sm text-rose-600">{errors.resultsVisibility.message}</p>
+            )}
+          </fieldset>
 
           <div className="space-y-6">
             {fields.map((field, index) => (
