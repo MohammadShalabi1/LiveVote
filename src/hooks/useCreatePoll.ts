@@ -16,16 +16,38 @@ async function createPoll({
   data: CreatePollData;
   creatorToken: string;
 }) {
+  const expiresAt = toExpirationValue(data.expiresAt);
   const { data: pollId, error } = await supabase.rpc("create_poll", {
     p_question: data.question,
     p_options: data.options,
     p_creator_token: creatorToken,
-    p_expires_at: toExpirationValue(data.expiresAt),
+    p_expires_at: expiresAt,
   });
 
   if (error) {
     if (!isMissingCreatePollRpc(error)) {
       throw error;
+    }
+
+    if (!expiresAt) {
+      const { data: legacyPollId, error: legacyError } = await supabase.rpc(
+        "create_poll",
+        {
+          p_question: data.question,
+          p_options: data.options,
+          p_creator_token: creatorToken,
+        }
+      );
+
+      if (!legacyError) {
+        return {
+          id: legacyPollId,
+        };
+      }
+
+      if (!isMissingCreatePollRpc(legacyError)) {
+        throw legacyError;
+      }
     }
 
     return createPollWithDirectInserts({ data, creatorToken });
