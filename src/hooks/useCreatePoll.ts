@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabaseClient";
 
 type CreatePollData = {
   question: string;
+  expiresAt?: string;
   options: {
     text: string;
   }[];
@@ -19,6 +20,7 @@ async function createPoll({
     p_question: data.question,
     p_options: data.options,
     p_creator_token: creatorToken,
+    p_expires_at: toExpirationValue(data.expiresAt),
   });
 
   if (error) {
@@ -41,6 +43,14 @@ function isMissingCreatePollRpc(error: { code?: string; message?: string }) {
   );
 }
 
+function toExpirationValue(expiresAt?: string) {
+  if (!expiresAt) {
+    return null;
+  }
+
+  return new Date(expiresAt).toISOString();
+}
+
 async function createPollWithDirectInserts({
   data,
   creatorToken,
@@ -48,14 +58,31 @@ async function createPollWithDirectInserts({
   data: CreatePollData;
   creatorToken: string;
 }) {
-  const { data: poll, error: pollError } = await supabase
+  const pollValues = {
+    question: data.question.trim(),
+    creator_token: creatorToken,
+    expires_at: toExpirationValue(data.expiresAt),
+  };
+
+  let { data: poll, error: pollError } = await supabase
     .from("polls")
-    .insert({
-      question: data.question.trim(),
-      creator_token: creatorToken,
-    })
+    .insert(pollValues)
     .select()
     .single();
+
+  if (pollError && pollError.message.includes("expires_at")) {
+    const { data: fallbackPoll, error: fallbackPollError } = await supabase
+      .from("polls")
+      .insert({
+        question: pollValues.question,
+        creator_token: pollValues.creator_token,
+      })
+      .select()
+      .single();
+
+    poll = fallbackPoll;
+    pollError = fallbackPollError;
+  }
 
   if (pollError) {
     throw pollError;

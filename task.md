@@ -311,15 +311,24 @@ expires_at: timestamp nullable
 
 ### Steps
 
-- [ ] Show `Open`, `Closed`, or `Ended` clearly on the poll page.
-- [ ] Disable voting when closed/expired.
-- [ ] Enforce the same rule in the database/RPC, not only in React.
-- [ ] Keep results visible after a poll closes.
-- [ ] If an expiration time exists, display it in the user's local time.
+- [x] Show `Open`, `Closed`, or `Ended` clearly on the poll page.
+- [x] Disable voting when closed/expired.
+- [x] Enforce the same rule in the database/RPC, not only in React.
+- [x] Keep results visible after a poll closes.
+- [x] If an expiration time exists, display it in the user's local time.
+
+### Implementation Notes
+
+- Added `polls.expires_at` in `supabase/migrations/202608280005_add_poll_expiration.sql`.
+- Updated `create_poll` to accept optional `p_expires_at`.
+- Updated `cast_vote` to reject closed, expired, or missing polls.
+- Added `src/lib/pollStatus.ts` to keep `Open`, `Closed`, and `Ended` logic in one place.
+- Added an optional expiration field to the poll creation form with future-date validation.
+- Vote and dashboard pages now display expiration times in the user's local format.
 
 ### Done When
 
-Changing the DOM/button state cannot bypass a closed poll.
+- [x] Changing the DOM/button state cannot bypass a closed poll.
 
 ---
 

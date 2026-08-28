@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useClosePoll } from "../hooks/useClosePoll";
 import { useDeletePoll } from "../hooks/useDeletePoll";
 import { useCreatorToken } from "../hooks/useCreatorToken";
+import { formatPollExpiration, getPollStatus, getPollStatusLabel } from "../lib/pollStatus";
 
 type PollCardProps = {
   poll:{
@@ -15,6 +16,7 @@ type PollCardProps = {
       id:string;
     }[];
     is_closed:boolean;
+    expires_at?: string | null;
   };
 };
 
@@ -23,6 +25,8 @@ export default function PollCard({ poll }: PollCardProps) {
   const closePoll = useClosePoll();
   const deletePoll = useDeletePoll();
   const creatorToken = useCreatorToken();
+  const status = getPollStatus(poll);
+  const expirationLabel = formatPollExpiration(poll.expires_at);
 
   return (
     <div
@@ -34,10 +38,16 @@ export default function PollCard({ poll }: PollCardProps) {
           <h2 className="text-lg font-semibold text-slate-900 sm:text-xl">{poll.question}</h2>
           <p className="mt-2 text-sm leading-6 text-slate-500">{poll.options.length} options · {poll.votes.length} voters</p>
         </div>
-        <span className={`inline-flex rounded-2xl px-3 py-1 text-xs font-semibold ${poll.is_closed ? "bg-rose-100 text-rose-600" : "bg-emerald-100 text-emerald-700"}`}>
-          {poll.is_closed ? "Closed" : "Open"}
+        <span className={`inline-flex rounded-2xl px-3 py-1 text-xs font-semibold ${status === "open" ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-600"}`}>
+          {getPollStatusLabel(status)}
         </span>
       </div>
+
+      {expirationLabel && (
+        <p className="mt-4 text-sm text-slate-500">
+          Ends {expirationLabel}
+        </p>
+      )}
 
       <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-slate-500">Tap to view poll results</p>

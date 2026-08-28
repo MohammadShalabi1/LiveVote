@@ -10,7 +10,8 @@ async function fetchPoll(id: string) {
         id,
         label,
         position
-      ),is_closed
+      ),is_closed,
+      expires_at
     `)
     .eq("id", id)
     .single();

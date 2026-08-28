@@ -5,6 +5,7 @@ import { useHasVoted } from "../hooks/useHasVoted";
 import { useVote } from "../hooks/useVote";
 import { useState } from "react";
 import VotePageSkeleton from "../components/VotePageSkeleton";
+import { formatPollExpiration, getPollStatus } from "../lib/pollStatus";
 
 export default function VotePage() {
   const [message, setMessage] = useState("");
@@ -58,14 +59,22 @@ export default function VotePage() {
     return <VotePageSkeleton />;
   }
 
-  if (poll.is_closed) {
+  const pollStatus = getPollStatus(poll);
+  const expirationLabel = formatPollExpiration(poll.expires_at);
+
+  if (pollStatus !== "open") {
+    const statusTitle = pollStatus === "closed" ? "This poll is closed." : "This poll has ended.";
+
     return (
       <div className="mx-auto min-h-[calc(100vh-3rem)] px-4 py-10">
         <div className="mx-auto max-w-xl rounded-3xl border border-slate-200 bg-white p-8 shadow-sm shadow-slate-200/40">
           <h1 className="text-3xl font-semibold text-slate-900">{poll.question}</h1>
           <div className="mt-6 rounded-3xl border border-amber-200/60 bg-amber-50 p-6">
-            <p className="text-lg font-medium text-amber-700">This poll is closed.</p>
+            <p className="text-lg font-medium text-amber-700">{statusTitle}</p>
             <p className="mt-2 text-sm text-slate-600">Voting is no longer available, but you can still view the results.</p>
+            {expirationLabel && (
+              <p className="mt-2 text-sm text-slate-600">Ended {expirationLabel}</p>
+            )}
           </div>
         </div>
       </div>
@@ -93,6 +102,9 @@ export default function VotePage() {
           <p className="text-sm uppercase tracking-[0.32em] text-indigo-600/80">LiveVote</p>
           <h1 className="mt-3 text-3xl font-semibold text-slate-900 sm:text-4xl">{poll.question}</h1>
           <p className="mt-3 text-sm leading-7 text-slate-600 sm:text-base">Pick one option below to submit your vote. Your response will be recorded instantly.</p>
+          {expirationLabel && (
+            <p className="mt-3 text-sm font-medium text-slate-600">Voting ends {expirationLabel}</p>
+          )}
         </div>
 
         {message && (

@@ -18,7 +18,8 @@ export function usePolls() {
             ),
             votes (
                 id
-            ),is_closed
+            ),is_closed,
+            expires_at
             `).eq("creator_token", token);
 
       if (error) {

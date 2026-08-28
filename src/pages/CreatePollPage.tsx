@@ -12,6 +12,14 @@ const schema = z
       .trim()
       .min(3, "Question must be at least 3 characters")
       .max(120, "Question must be 120 characters or less"),
+    expiresAt: z
+      .string()
+      .refine((value) => value === "" || !Number.isNaN(new Date(value).getTime()), {
+        message: "Enter a valid expiration date",
+      })
+      .refine((value) => value === "" || new Date(value).getTime() > Date.now(), {
+        message: "Expiration must be in the future",
+      }),
     options: z
       .array(
         z.object({
@@ -55,6 +63,7 @@ export default function CreatePollPage() {
     resolver: zodResolver(schema),
     defaultValues: {
       question: "",
+      expiresAt: "",
       options: [{ text: "" }, { text: "" }],
     },
   });
@@ -100,6 +109,18 @@ export default function CreatePollPage() {
             />
             {errors.question?.message && (
               <p className="text-sm text-rose-600">{errors.question.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-slate-700">Expiration</label>
+            <input
+              type="datetime-local"
+              {...register("expiresAt")}
+              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
+            />
+            {errors.expiresAt?.message && (
+              <p className="text-sm text-rose-600">{errors.expiresAt.message}</p>
             )}
           </div>
 
