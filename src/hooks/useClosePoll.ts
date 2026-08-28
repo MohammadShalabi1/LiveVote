@@ -6,14 +6,18 @@ export function useClosePoll() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (pollId:string) => {
+    mutationFn: async ({
+      pollId,
+      creatorToken,
+    }: {
+      pollId: string;
+      creatorToken: string;
+    }) => {
 
-      const { error } = await supabase
-        .from("polls")
-        .update({
-          is_closed: true
-        })
-        .eq("id", pollId);
+      const { error } = await supabase.rpc("close_poll", {
+        p_poll_id: pollId,
+        p_creator_token: creatorToken,
+      });
 
       if(error){
         throw error;

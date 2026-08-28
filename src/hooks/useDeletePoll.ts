@@ -5,11 +5,17 @@ export function useDeletePoll() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (pollId: string) => {
-      const { error } = await supabase
-        .from("polls")
-        .delete()
-        .eq("id", pollId);
+    mutationFn: async ({
+      pollId,
+      creatorToken,
+    }: {
+      pollId: string;
+      creatorToken: string;
+    }) => {
+      const { error } = await supabase.rpc("delete_poll", {
+        p_poll_id: pollId,
+        p_creator_token: creatorToken,
+      });
 
       if (error) {
         throw error;

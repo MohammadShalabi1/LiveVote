@@ -15,40 +15,19 @@ async function createPoll({
   data: CreatePollData;
   creatorToken: string;
 }) {
+  const { data: pollId, error } = await supabase.rpc("create_poll", {
+    p_question: data.question,
+    p_options: data.options,
+    p_creator_token: creatorToken,
+  });
 
-  const { data: poll, error: pollError } = await supabase
-    .from("polls")
-    .insert({
-      question: data.question,
-      creator_token: creatorToken,
-    })
-    .select()
-    .single();
-
-
-  if (pollError) {
-    throw pollError;
+  if (error) {
+    throw error;
   }
 
-
-  const options = data.options.map((option, index) => ({
-    poll_id: poll.id,
-    label: option.text,
-    position: index,
-  }));
-
-
-  const { error: optionsError } = await supabase
-    .from("options")
-    .insert(options);
-
-
-  if (optionsError) {
-    throw optionsError;
-  }
-
-
-  return poll;
+  return {
+    id: pollId,
+  };
 }
 
 
