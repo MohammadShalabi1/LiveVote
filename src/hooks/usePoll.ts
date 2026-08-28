@@ -46,9 +46,13 @@ async function fetchPoll(id: string) {
       .from("polls")
       .select(select)
       .eq("id", id)
-      .single();
+      .maybeSingle();
 
     if (!error) {
+      if (!data) {
+        return null;
+      }
+
       const poll = data as any;
 
       return {

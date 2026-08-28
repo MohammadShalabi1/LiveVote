@@ -12,6 +12,7 @@ import {
   normalizeResultsVisibility,
 } from "../lib/resultVisibility";
 import { useQueryClient } from "@tanstack/react-query";
+import PageState from "../components/PageState";
 
 type SubmitState = "idle" | "submitting" | "success" | "error";
 
@@ -23,13 +24,20 @@ export default function VotePage() {
   const { id } = useParams();
   const queryClient = useQueryClient();
 
-  const { data: poll, isLoading, error } = usePoll(id!);
+  const {
+    data: poll,
+    isLoading,
+    error,
+    refetch: refetchPoll,
+  } = usePoll(id!);
 
   const voterId = useVoterToken();
 
   const {
     data: hasVoted,
     isLoading: hasVotedLoading,
+    error: hasVotedError,
+    refetch: refetchHasVoted,
   } = useHasVoted(id!, voterId);
 
   const vote = useVote();
@@ -90,34 +98,54 @@ export default function VotePage() {
 
   if (error) {
     return (
-      <div className="mx-auto flex min-h-[calc(100vh-3rem)] items-center justify-center px-4 py-10">
-        <div className="w-full max-w-xl rounded-3xl border border-rose-200 bg-white p-8 text-center shadow-sm shadow-rose-200/40">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-3xl bg-rose-100 text-2xl text-rose-600">
-            !
-          </div>
-          <h1 className="text-2xl font-semibold text-slate-900">Unable to load poll</h1>
-          <p className="mt-3 text-sm text-slate-600">{error.message}</p>
-        </div>
-      </div>
+      <PageState
+        title="Unable to load poll"
+        message="There was a problem loading this poll. Please check your connection and try again."
+        tone="error"
+        icon="!"
+        actions={[{ label: "Retry", onClick: () => refetchPoll() }]}
+      />
     );
   }
 
   if (!poll) {
     return (
-      <div className="mx-auto flex min-h-[calc(100vh-3rem)] items-center justify-center px-4 py-10">
-        <div className="w-full max-w-xl rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm shadow-slate-200/40">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-2xl text-slate-600">
-            ?
-          </div>
-          <h1 className="text-2xl font-semibold text-slate-900">Poll not found</h1>
-          <p className="mt-3 text-sm text-slate-600">The poll link may be invalid or the poll no longer exists.</p>
-        </div>
-      </div>
+      <PageState
+        title="Poll not found"
+        message="The poll link may be invalid or the poll no longer exists."
+        icon="?"
+      />
+    );
+  }
+
+  if (!poll.options?.length) {
+    return (
+      <PageState
+        title="This poll has no options yet"
+        message="There are no choices available for this poll, so voting is not available."
+        tone="warning"
+        icon="!"
+        actions={[{ label: "Retry", onClick: () => refetchPoll() }]}
+      />
     );
   }
 
   if (hasVotedLoading) {
     return <VotePageSkeleton />;
+  }
+
+  if (hasVotedError) {
+    return (
+      <PageState
+        title="Unable to check vote status"
+        message="There was a problem checking whether this browser has already voted. Please try again."
+        tone="error"
+        icon="!"
+        actions={[
+          { label: "Retry", onClick: () => refetchHasVoted() },
+        ]}
+      />
+    );
   }
 
   const pollStatus = getPollStatus(poll);

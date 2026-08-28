@@ -1,6 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import PageState from "../components/PageState";
 import ResultsBar from "../components/ResultsBar";
 import { ResultsChart } from "../components/ResultsChart";
 import { useCreatorToken } from "../hooks/useCreatorToken";
@@ -14,18 +15,28 @@ import {
 } from "../lib/resultVisibility";
 import { supabase } from "../lib/supabaseClient";
 
+type RealtimeStatus = "idle" | "connected" | "disconnected";
+
 export default function ResultPage() {
   const { id } = useParams();
   const voterId = useVoterToken();
   const creatorToken = useCreatorToken();
   const queryClient = useQueryClient();
+  const [realtimeStatus, setRealtimeStatus] =
+    useState<RealtimeStatus>("idle");
 
-  const { data: votes, isLoading, error } = useVoteResult(
-    id!,
-    voterId,
-    creatorToken
-  );
-  const { data: poll, isLoading: pollLoading } = usePoll(id!);
+  const {
+    data: votes,
+    isLoading,
+    error,
+    refetch: refetchResults,
+  } = useVoteResult(id!, voterId, creatorToken);
+  const {
+    data: poll,
+    isLoading: pollLoading,
+    error: pollError,
+    refetch: refetchPoll,
+  } = usePoll(id!);
   const resultsHidden = isResultsHiddenError(error);
 
   useEffect(() => {
@@ -49,7 +60,19 @@ export default function ResultPage() {
           });
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          setRealtimeStatus("connected");
+        }
+
+        if (
+          status === "CHANNEL_ERROR" ||
+          status === "TIMED_OUT" ||
+          status === "CLOSED"
+        ) {
+          setRealtimeStatus("disconnected");
+        }
+      });
 
     return () => {
       supabase.removeChannel(channel);
@@ -73,40 +96,50 @@ export default function ResultPage() {
     );
   }
 
+  if (pollError) {
+    return (
+      <PageState
+        title="Unable to load poll"
+        message="There was a problem loading this poll. Please check your connection and try again."
+        tone="error"
+        icon="!"
+        actions={[{ label: "Retry", onClick: () => refetchPoll() }]}
+      />
+    );
+  }
+
   if (!poll) {
     return (
-      <div className="mx-auto flex min-h-[calc(100vh-3rem)] items-center justify-center px-4 py-10">
-        <div className="w-full max-w-3xl rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm shadow-slate-200/40">
-          <h1 className="text-2xl font-semibold text-slate-900">Poll not found</h1>
-          <p className="mt-3 text-sm text-slate-600">The poll you are looking for does not exist or has been removed.</p>
-        </div>
-      </div>
+      <PageState
+        title="Poll not found"
+        message="The poll you are looking for does not exist or has been removed."
+        icon="?"
+      />
     );
   }
 
   if (resultsHidden) {
     return (
-      <div className="mx-auto flex min-h-[calc(100vh-3rem)] items-center justify-center px-4 py-10">
-        <div className="w-full max-w-3xl rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm shadow-slate-200/40">
-          <h1 className="text-2xl font-semibold text-slate-900">Results are hidden</h1>
-          <p className="mt-3 text-sm text-slate-600">
-            {getHiddenResultsMessage(
-              normalizeResultsVisibility(poll.results_visibility)
-            )}
-          </p>
-        </div>
-      </div>
+      <PageState
+        title="Results are hidden"
+        message={getHiddenResultsMessage(
+          normalizeResultsVisibility(poll.results_visibility)
+        )}
+        tone="info"
+        icon="!"
+      />
     );
   }
 
   if (error) {
     return (
-      <div className="mx-auto flex min-h-[calc(100vh-3rem)] items-center justify-center px-4 py-10">
-        <div className="w-full max-w-3xl rounded-3xl border border-rose-200 bg-white p-8 text-center shadow-sm shadow-rose-200/40">
-          <h1 className="text-2xl font-semibold text-slate-900">Unable to load results</h1>
-          <p className="mt-3 text-sm text-slate-600">There was a problem fetching votes. Please refresh or try again later.</p>
-        </div>
-      </div>
+      <PageState
+        title="Unable to load results"
+        message="There was a problem fetching results. Please check your connection and try again."
+        tone="error"
+        icon="!"
+        actions={[{ label: "Retry", onClick: () => refetchResults() }]}
+      />
     );
   }
 
@@ -123,6 +156,19 @@ export default function ResultPage() {
               Total votes: <span className="text-slate-900">{totalVotes}</span>
             </div>
           </div>
+
+          {realtimeStatus === "disconnected" && (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              Live updates are disconnected. The results below still work, and you can retry fetching the latest totals.
+              <button
+                type="button"
+                onClick={() => refetchResults()}
+                className="ml-3 font-semibold text-amber-900 underline underline-offset-2"
+              >
+                Retry
+              </button>
+            </div>
+          )}
 
           {totalVotes === 0 ? (
             <div className="rounded-3xl border border-slate-200 bg-slate-50 p-8 text-center text-slate-600 shadow-sm shadow-slate-200/30">

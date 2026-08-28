@@ -451,13 +451,22 @@ A slow network does not make users wonder whether they voted twice.
 
 ### Required UI States
 
-- [ ] Poll loading skeleton.
-- [ ] Poll not found state.
-- [ ] Poll has no options state.
-- [ ] Network/API failure state with Retry.
-- [ ] Closed/expired poll state.
-- [ ] Realtime disconnected state that still allows refresh/retry.
-- [ ] Results loading state.
+- [x] Poll loading skeleton.
+- [x] Poll not found state.
+- [x] Poll has no options state.
+- [x] Network/API failure state with Retry.
+- [x] Closed/expired poll state.
+- [x] Realtime disconnected state that still allows refresh/retry.
+- [x] Results loading state.
+
+### Implementation Notes
+
+- Added a reusable `PageState` component for friendly empty, error, and not-found states.
+- Vote and result pages now use retry actions from TanStack Query `refetch`.
+- Raw Supabase error messages are no longer shown on the vote/result pages.
+- Invalid poll IDs render `Poll not found` through `usePoll` returning `null`.
+- Empty poll options render a deliberate no-options state with no enabled vote action.
+- Result realtime subscription status now shows a non-blocking disconnected notice with a retry action.
 
 ### Error Rule
 
