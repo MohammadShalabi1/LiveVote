@@ -22,12 +22,60 @@ async function createPoll({
   });
 
   if (error) {
-    throw error;
+    if (!isMissingCreatePollRpc(error)) {
+      throw error;
+    }
+
+    return createPollWithDirectInserts({ data, creatorToken });
   }
 
   return {
     id: pollId,
   };
+}
+
+function isMissingCreatePollRpc(error: { code?: string; message?: string }) {
+  return (
+    error.code === "PGRST202" ||
+    error.message?.toLowerCase().includes("create_poll") === true
+  );
+}
+
+async function createPollWithDirectInserts({
+  data,
+  creatorToken,
+}: {
+  data: CreatePollData;
+  creatorToken: string;
+}) {
+  const { data: poll, error: pollError } = await supabase
+    .from("polls")
+    .insert({
+      question: data.question,
+      creator_token: creatorToken,
+    })
+    .select()
+    .single();
+
+  if (pollError) {
+    throw pollError;
+  }
+
+  const options = data.options.map((option, index) => ({
+    poll_id: poll.id,
+    label: option.text,
+    position: index,
+  }));
+
+  const { error: optionsError } = await supabase
+    .from("options")
+    .insert(options);
+
+  if (optionsError) {
+    throw optionsError;
+  }
+
+  return poll;
 }
 
 

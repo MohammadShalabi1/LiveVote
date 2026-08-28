@@ -88,7 +88,7 @@ begin
 
   if exists (
     select 1
-    from jsonb_array_elements(p_options) as option_item
+    from jsonb_array_elements(p_options) as option_rows(option_item)
     where length(trim(coalesce(option_item->>'text', ''))) = 0
   ) then
     raise exception 'Options cannot be blank' using errcode = '22023';
