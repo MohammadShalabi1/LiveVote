@@ -4,9 +4,9 @@ import { supabase } from "../lib/supabaseClient";
 type VoteData ={
     pollId: string;
     optionId: string;
-    voterToken: string;
+    voterId: string;
 }
-async function vote({pollId,optionId,voterToken}:VoteData){
+async function vote({pollId,optionId,voterId}:VoteData){
     const { data: poll } = await supabase
         .from("polls")
         .select("is_closed")
@@ -19,7 +19,7 @@ async function vote({pollId,optionId,voterToken}:VoteData){
         const {data,error} = await supabase.from("votes").insert({
             poll_id: pollId,
             option_id: optionId,
-            voter_token: voterToken
+            voter_token: voterId
         }).select().single();
 
 

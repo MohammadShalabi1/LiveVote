@@ -3,16 +3,16 @@ import { supabase } from "../lib/supabaseClient";
 
 async function hasVoted({
   pollId,
-  voterToken,
+  voterId,
 }: {
   pollId: string;
-  voterToken: string;
+  voterId: string;
 }) {
   const { data, error } = await supabase
     .from("votes")
     .select()
     .eq("poll_id", pollId)
-    .eq("voter_token", voterToken)
+    .eq("voter_token", voterId)
     .maybeSingle();
 
   if (error) {
@@ -24,11 +24,11 @@ async function hasVoted({
 
 export function useHasVoted(
   pollId: string,
-  voterToken: string
+  voterId: string
 ) {
   return useQuery({
-    queryKey: ["hasVoted", pollId, voterToken],
-    queryFn: () => hasVoted({ pollId, voterToken }),
-    enabled: !!pollId && !!voterToken,
+    queryKey: ["hasVoted", pollId, voterId],
+    queryFn: () => hasVoted({ pollId, voterId }),
+    enabled: !!pollId && !!voterId,
   });
 }

@@ -13,12 +13,12 @@ export default function VotePage() {
 
   const { data: poll, isLoading, error } = usePoll(id!);
 
-  const voterToken = useVoterToken();
+  const voterId = useVoterToken();
 
   const {
     data: hasVoted,
     isLoading: hasVotedLoading,
-  } = useHasVoted(id!, voterToken);
+  } = useHasVoted(id!, voterId);
 
   const vote = useVote();
 
@@ -110,7 +110,7 @@ export default function VotePage() {
                   {
                     pollId: id!,
                     optionId: option.id,
-                    voterToken,
+                    voterId,
                   },
                   {
                     onSuccess: () => {
@@ -119,7 +119,7 @@ export default function VotePage() {
 
                     onError: (error: any) => {
                       if (error.code === "23505") {
-                        setMessage("You already voted.");
+                        setMessage("You already voted in this browser.");
                       } else if (error.message === "Poll is closed") {
                         setMessage("This poll is closed.");
                       } else {
@@ -129,6 +129,7 @@ export default function VotePage() {
                   }
                 )
               }
+              disabled={vote.isPending}
               className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-5 py-5 text-left text-lg font-semibold text-slate-900 shadow-sm shadow-slate-200/40 transition duration-200 hover:border-indigo-200 hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-indigo-200 active:bg-slate-100"
             >
               {option.label}

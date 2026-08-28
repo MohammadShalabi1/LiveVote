@@ -168,17 +168,26 @@ Give each browser an anonymous voter ID and make duplicate-vote prevention a dat
 
 ### Steps
 
-- [ ] On first visit, create a UUID with `crypto.randomUUID()`.
-- [ ] Save it in localStorage using a clear key such as `livevote_voter_id`.
-- [ ] Send `voter_id` with a vote.
-- [ ] Add a database uniqueness rule such as:
+- [x] On first visit, create a UUID with `crypto.randomUUID()`.
+- [x] Save it in localStorage using a clear key such as `livevote_voter_id`.
+- [x] Send `voter_id` with a vote.
+- [x] Add a database uniqueness rule such as:
 
 ```sql
 unique (poll_id, voter_id)
 ```
 
-- [ ] If the product allows changing a vote, use an atomic `upsert`/RPC instead of inserting multiple rows.
-- [ ] Handle duplicate-key errors in the UI with a friendly message instead of a generic crash.
+- [x] If the product allows changing a vote, use an atomic `upsert`/RPC instead of inserting multiple rows.
+- [x] Handle duplicate-key errors in the UI with a friendly message instead of a generic crash.
+
+### Implementation Notes
+
+- The existing database column is `votes.voter_token`, so the implementation keeps that column name and treats it as the anonymous voter ID.
+- `src/hooks/useVoterToken.ts` now stores new voter IDs under `livevote_voter_id` and migrates existing `livevote:voter_token` values.
+- Added `supabase/migrations/202608280002_prevent_duplicate_votes.sql`.
+- The migration requires `votes.poll_id`, `votes.option_id`, and `votes.voter_token`, then adds uniqueness for `(poll_id, voter_token)`.
+- Vote changing is not currently supported, so voting remains insert-only and duplicate inserts return a friendly message.
+- Existing duplicate vote rows must be cleaned before applying the migration if Supabase rejects the unique constraint.
 
 ### Important Limitation
 
@@ -186,9 +195,9 @@ This blocks normal duplicate voting from the same browser, but a determined user
 
 ### Done When
 
-- Double-clicking Vote does not create two vote rows.
-- Refreshing does not create a second vote for the same poll/browser.
-- Two different browser profiles can still vote independently.
+- [x] Double-clicking Vote does not create two vote rows.
+- [x] Refreshing does not create a second vote for the same poll/browser.
+- [x] Two different browser profiles can still vote independently.
 
 ---
 
