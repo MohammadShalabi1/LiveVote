@@ -7,20 +7,11 @@ type VoteData ={
     voterId: string;
 }
 async function vote({pollId,optionId,voterId}:VoteData){
-    const { data: poll } = await supabase
-        .from("polls")
-        .select("is_closed")
-        .eq("id", pollId)
-        .single();
-
-        if (poll?.is_closed) {
-        throw new Error("Poll is closed");
-        }
-        const {data,error} = await supabase.from("votes").insert({
-            poll_id: pollId,
-            option_id: optionId,
-            voter_token: voterId
-        }).select().single();
+        const {data,error} = await supabase.rpc("cast_vote", {
+            p_poll_id: pollId,
+            p_option_id: optionId,
+            p_voter_id: voterId
+        });
 
 
         if(error){

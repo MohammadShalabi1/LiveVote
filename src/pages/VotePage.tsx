@@ -120,7 +120,7 @@ export default function VotePage() {
                     onError: (error: any) => {
                       if (error.code === "23505") {
                         setMessage("You already voted in this browser.");
-                      } else if (error.message === "Poll is closed") {
+                      } else if (error.code === "LV001" || error.message === "Poll is closed") {
                         setMessage("This poll is closed.");
                       } else {
                         setMessage("Something went wrong.");

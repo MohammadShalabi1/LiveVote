@@ -216,18 +216,27 @@ One vote action should either complete fully or fail fully.
 
 ### Steps
 
-- [ ] Disable the vote button immediately while a vote request is pending.
-- [ ] Use one database operation for casting/changing a vote.
-- [ ] Prefer a Supabase `upsert` or small Postgres RPC for vote changes.
-- [ ] Enforce that the referenced option belongs to the referenced poll.
-- [ ] Prevent voting when the poll is closed/expired.
-- [ ] Return a predictable result/error code to the UI.
+- [x] Disable the vote button immediately while a vote request is pending.
+- [x] Use one database operation for casting/changing a vote.
+- [x] Prefer a Supabase `upsert` or small Postgres RPC for vote changes.
+- [x] Enforce that the referenced option belongs to the referenced poll.
+- [x] Prevent voting when the poll is closed/expired.
+- [x] Return a predictable result/error code to the UI.
+
+### Implementation Notes
+
+- Added `supabase/migrations/202608280003_cast_vote_rpc.sql`.
+- The migration revokes direct anonymous `votes` inserts and replaces the insert policy with a `cast_vote` RPC.
+- `cast_vote` checks for a non-empty voter ID, an open poll, and an option that belongs to that poll before inserting.
+- Duplicate votes still rely on the Task 2 `(poll_id, voter_token)` database constraint.
+- `src/hooks/useVote.ts` now calls `cast_vote` instead of doing a separate poll read and vote insert.
+- The vote page maps duplicate and closed-poll failures to friendly messages.
 
 ### Done When
 
-- Rapid clicks do not create corrupted or duplicate data.
-- A vote cannot be stored for an option belonging to another poll.
-- Failed requests leave the previous vote state unchanged.
+- [x] Rapid clicks do not create corrupted or duplicate data.
+- [x] A vote cannot be stored for an option belonging to another poll.
+- [x] Failed requests leave the previous vote state unchanged.
 
 ---
 
