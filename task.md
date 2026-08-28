@@ -420,14 +420,23 @@ Make voting feel immediate, understandable, and safe from accidental repeated ac
 
 ### Steps
 
-- [ ] Make the entire option card clickable, not only a tiny radio control.
-- [ ] Clearly show the selected option.
-- [ ] Disable the submit button while saving.
-- [ ] Show a small loading indicator while submitting.
-- [ ] On success, show `Vote submitted` or `Vote updated`.
-- [ ] On failure, keep the user's selection and show a retry action.
-- [ ] If changing votes is supported, explicitly label it `Change vote`.
-- [ ] Avoid optimistic count updates unless rollback is implemented correctly.
+- [x] Make the entire option card clickable, not only a tiny radio control.
+- [x] Clearly show the selected option.
+- [x] Disable the submit button while saving.
+- [x] Show a small loading indicator while submitting.
+- [x] On success, show `Vote submitted` or `Vote updated`.
+- [x] On failure, keep the user's selection and show a retry action.
+- [x] If changing votes is supported, explicitly label it `Change vote`.
+- [x] Avoid optimistic count updates unless rollback is implemented correctly.
+
+### Implementation Notes
+
+- The vote page now uses a select-then-submit flow instead of submitting immediately when an option is tapped.
+- Selected options get a visible selected state and an explicit `Selected` marker.
+- The submit button is disabled until an option is selected and shows `Submitting...` with a spinner while saving.
+- Failed submissions keep the user's selected option and change the submit button to `Retry vote`.
+- Successful submissions show `Vote submitted.` and invalidate the relevant vote state/results queries.
+- Vote changing is not supported, so no `Change vote` action is shown.
 
 ### Done When
 
